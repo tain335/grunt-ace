@@ -1,0 +1,9 @@
+{
+	"initDirs": [
+		"css/lib",
+		"css/mod",
+		"js/lib",
+		"js/mod",
+		"hml"
+	]
+}
