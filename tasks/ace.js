@@ -1,74 +1,74 @@
-var fs = require('fs');
-var path = require('path');
-var vm =  require('vm');
-var util = require('util');
-var cp = require('child_process');
-var utils = require('./lib/utils');
-var config = require('./lib/config');
-var grunt = require('grunt');
-var async =  require('async');
-var mkdirp = require('mkdirp');
-var glob = require('glob');
-var minimatch = require('minimatch');
-var beautify = require('js-beautify');
-var CleanCSS = require('clean-css');
-var CoffeeScript = require('coffee-script');
-var Less = require('less');
-var linefeed = grunt.util.linefeed;
-var multiCommentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/g;
-var siglCommentRegExp = /\/\/.*$/mg;
-var cjsRequireRegExp = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g;
-var srcRegExp = /<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/g;
-//var importRegExp = /^\s*@import\s+["']([^"']+)['"]\s*;$/mg
-var fnwrap = ['(function(define){','})(define)'];
-var tplwrap = ['(function(define){define(function(require){', '});})(define)'];
-var scriptwrap = [linefeed + '<script type="text/javascript">' + linefeed, linefeed + '</script>' + linefeed];
-var stylewrap = [linefeed + '<style type="text/css">' + linefeed, linefeed + '</style>' + linefeed];
-var moduleCache = {};
-var opts = {};
-var requireCfg = {};
-var requireMock = {
-	define: function (name, deps, callback) {
-		var _path = requireMock.path;
-        //Allow for anonymous modules
-        if (typeof name !== 'string') {
-            //Adjust args appropriately
-            callback = deps;
-            deps = name;
-            name = null;
-        }
+var fs = require('fs'),
+ 	path = require('path'),
+	vm =  require('vm'),
+	util = require('util'),
+	cp = require('child_process'),
+	utils = require('./lib/utils'),
+	config = require('./lib/config'),
+	grunt = require('grunt'),
+	async =  require('async'),
+	mkdirp = require('mkdirp'),
+	glob = require('glob'),
+	minimatch = require('minimatch'),
+	beautify = require('js-beautify'),
+	CleanCSS = require('clean-css'),
+	CoffeeScript = require('coffee-script'),
+	Less = require('less'),
+	linefeed = grunt.util.linefeed,
+	multiCommentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/g,
+	siglCommentRegExp = /\/\/.*$/mg,
+	cjsRequireRegExp = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
+	srcRegExp = /<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/g,
+	//var importRegExp = /^\s*@import\s+["']([^"']+)['"]\s*;$/mg
+	fnwrap = ['(function(define){','})(define)'],
+	tplwrap = ['(function(define){define(function(require){', '});})(define)'],
+	scriptwrap = [linefeed + '<script type="text/javascript">' + linefeed, linefeed + '</script>' + linefeed],
+	stylewrap = [linefeed + '<style type="text/css">' + linefeed, linefeed + '</style>' + linefeed],
+	moduleCache = {},
+	opts = {},
+	requireCfg = {},
+	requireMock = {
+		define: function (name, deps, callback) {
+			var _path = requireMock.path;
+	        //Allow for anonymous modules
+	        if (typeof name !== 'string') {
+	            //Adjust args appropriately
+	            callback = deps;
+	            deps = name;
+	            name = null;
+	        }
 
-        //This module may not have dependencies
-        if (!utils._isArray(deps)) {
-            callback = deps;
-            deps = null;
-        }
+	        //This module may not have dependencies
+	        if (!utils._isArray(deps)) {
+	            callback = deps;
+	            deps = null;
+	        }
 
-        //If no name, and callback is a function, then figure out 
-        //CommonJS thing with dependencies.
-        if (!deps && utils._isFunction(callback)) {
-            deps = [];
-            if (callback.length) {
-                callback
-                    .toString()
-                    .replace(multiCommentRegExp, '')
-                    .replace(siglCommentRegExp, '')
-                    .replace(cjsRequireRegExp, function (match, dep) {
-                    	var _depath = _resolveDependency(_path, dep, '.js');
-                    	moduleCache[_path].deps.push({path: _depath, dep: dep});
-                    });
-            }
-        }
-        if (path.extname(_path) === '.js') {
-        	moduleCache[_path].fn = callback;
-        }
-    },
-    requirejs: {
-    	config: function (cfg) {
-    		requireCfg = cfg;
-    	}
-    }
-}
+	        //If no name, and callback is a function, then figure out 
+	        //CommonJS thing with dependencies.
+	        if (!deps && utils._isFunction(callback)) {
+	            deps = [];
+	            if (callback.length) {
+	                callback
+	                    .toString()
+	                    .replace(multiCommentRegExp, '')
+	                    .replace(siglCommentRegExp, '')
+	                    .replace(cjsRequireRegExp, function (match, dep) {
+	                    	var _depath = _resolveDependency(_path, dep, '.js');
+	                    	moduleCache[_path].deps.push({path: _depath, dep: dep});
+	                    });
+	            }
+	        }
+	        if (path.extname(_path) === '.js') {
+	        	moduleCache[_path].fn = callback;
+	        }
+	  	},
+	    requirejs: {
+	    	config: function (cfg) {
+	    		requireCfg = cfg;
+	    	}
+	    }
+	}
 
 function log() {
 	grunt.log.writeln(_joint(arguments));
