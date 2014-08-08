@@ -38,7 +38,8 @@
     "less": "~1.7.3",
     "mkdirp": "~0.3.5",
     "glob": "~4.0.2",
-    "minimatch": "~0.3.0"
+    "minimatch": "~0.3.0",
+    "coffee-script": "*"
   },
   "peerDependencies": {
     "grunt": "~0.4.2"

@@ -16,8 +16,8 @@ module.exports = function(grunt) {
         'Gruntfile.js'
       ],
       options: {
-        jshintrc: '.jshintrc',
-      },
+        jshintrc: '.jshintrc'
+      }
     },
     // Before generating any new files, remove any previously-created files.
     clean: {
@@ -62,7 +62,7 @@ module.exports = function(grunt) {
           ]
         }
       }
-    },
+    }
   });
 
   // These plugins provide necessary tasks.
