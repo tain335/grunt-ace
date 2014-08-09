@@ -27,8 +27,8 @@ module.exports = function(grunt) {
     ace: {
       options: {
         encoding: 'utf-8',
-        root: '<%=grunt.option("root") || process.cwd()%>',
-        output: '<%=grunt.option("output") || "../webapp/static"%>'
+        root: '<%=grunt.option("root") || process.cwd() + "/mock"%>',
+        output: '<%=grunt.option("output") || process.cwd() + "/webapp/static"%>'
       },
       'init-all': {
 
@@ -40,7 +40,7 @@ module.exports = function(grunt) {
       },
       'build-all': {
         options: {
-          requireCfg: 'lib/requireJS/config',
+          // requireCfg: 'lib/requireJS/config',
           ignores: [
             'lib/jquery/**',
             'lib/requireJS/**',
@@ -53,8 +53,8 @@ module.exports = function(grunt) {
       'copy-all': {
         options: {
           inserts: [
-            'lib/requireJS/main',
-            'lib/requireJS/config'
+            // 'lib/requireJS/main',
+            // 'lib/requireJS/config'
           ],
           reserves: [
             'lib/jquery/**',
@@ -68,7 +68,8 @@ module.exports = function(grunt) {
   // These plugins provide necessary tasks.
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-ace');
+  // grunt.loadNpmTasks('grunt-ace');
+  grunt.loadTasks('tasks');
 
   // Whenever the "test" task is run, first clean the "tmp" dir, then run this
   // plugin's task(s), then test the result.

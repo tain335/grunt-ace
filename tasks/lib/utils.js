@@ -1,4 +1,4 @@
- var _ots = Object.prototype.toString;
+var _ots = Object.prototype.toString;
  
  module.exports = {
   _isFunction: function(obj) {
@@ -45,5 +45,14 @@
         }
       }
     }
+  },
+  _escape: function(html) {
+    return String(html)
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/&/g, '&amp;')
+      .replace(/`/g, '&#96;')
+      .replace(/'/, '&#39;')
+      .replace(/"/, '&quot;');
   }
 }

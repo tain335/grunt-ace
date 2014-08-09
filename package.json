@@ -1,7 +1,7 @@
 {
   "name": "grunt-ace",
   "description": "packaging tool",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "homepage": "https://github.com/tain335/tain335",
   "author": {
     "name": "tain335",
@@ -27,7 +27,8 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "grunt": "~0.4.2",
+    "grunt": "~0.4.5",
+    "grunt-cli": "~0.1.13",
     "grunt-contrib-jshint": "~0.6.0",
     "grunt-contrib-clean": "~0.4.0",
     "grunt-contrib-nodeunit": "~0.2.0",
@@ -39,7 +40,8 @@
     "mkdirp": "~0.3.5",
     "glob": "~4.0.2",
     "minimatch": "~0.3.0",
-    "coffee-script": "*"
+    "coffee-script": "*",
+    "ejs": "*"
   },
   "peerDependencies": {
     "grunt": "~0.4.2"

@@ -10,65 +10,54 @@ var fs = require('fs'),
 	mkdirp = require('mkdirp'),
 	glob = require('glob'),
 	minimatch = require('minimatch'),
-	beautify = require('js-beautify'),
+	//beautify = require('js-beautify'),
 	CleanCSS = require('clean-css'),
 	CoffeeScript = require('coffee-script'),
 	Less = require('less'),
+	EJS = require('ejs'),
+	Window = require('./lib/window'),
 	linefeed = grunt.util.linefeed,
 	multiCommentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/g,
 	siglCommentRegExp = /\/\/.*$/mg,
-	cjsRequireRegExp = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
-	srcRegExp = /<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/g,
+	srcRegExp = /(.*)<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/g,
 	//var importRegExp = /^\s*@import\s+["']([^"']+)['"]\s*;$/mg
 	fnwrap = ['(function(define){','})(define)'],
-	tplwrap = ['(function(define){define(function(require){', '});})(define)'],
-	scriptwrap = [linefeed + '<script type="text/javascript">' + linefeed, linefeed + '</script>' + linefeed],
-	stylewrap = [linefeed + '<style type="text/css">' + linefeed, linefeed + '</style>' + linefeed],
+	tplwrap = ['(function(define){define(', ');})(define)'],
+	scriptwrap = [linefeed + '<script type="text/javascript">' + linefeed, linefeed + '</script>'],
+	stylewrap = [linefeed + '<style type="text/css">' + linefeed, linefeed + '</style>'],
 	moduleCache = {},
 	opts = {},
 	requireCfg = {},
-	requireMock = {
-		define: function (name, deps, callback) {
-			var _path = requireMock.path;
-	        //Allow for anonymous modules
-	        if (typeof name !== 'string') {
-	            //Adjust args appropriately
-	            callback = deps;
-	            deps = name;
-	            name = null;
-	        }
+	requireMock = Window;
 
-	        //This module may not have dependencies
-	        if (!utils._isArray(deps)) {
-	            callback = deps;
-	            deps = null;
-	        }
+requireMock.define = function (name, deps, callback) {
+	var _path = path.normalize(requireMock.path);
+	var require = function(deps, callback, errback) {
+  		if(typeof deps === 'string' && !callback) {
+  			var _depath = _resolveDependency(_path, deps, '.js');
+        	moduleCache[_path].deps.push({path: _depath, dep: deps});
+  		}
+  	};
+    if (typeof name !== 'string') {
+        callback = deps;
+        deps = name;
+        name = null;
+    }
+    if (!utils._isArray(deps)) {
+        callback = deps;
+        deps = null;
+    }
+    callback(require);
+    if (path.extname(_path) === '.js') {
+    	moduleCache[_path].fn = callback;
+    }
+};
 
-	        //If no name, and callback is a function, then figure out 
-	        //CommonJS thing with dependencies.
-	        if (!deps && utils._isFunction(callback)) {
-	            deps = [];
-	            if (callback.length) {
-	                callback
-	                    .toString()
-	                    .replace(multiCommentRegExp, '')
-	                    .replace(siglCommentRegExp, '')
-	                    .replace(cjsRequireRegExp, function (match, dep) {
-	                    	var _depath = _resolveDependency(_path, dep, '.js');
-	                    	moduleCache[_path].deps.push({path: _depath, dep: dep});
-	                    });
-	            }
-	        }
-	        if (path.extname(_path) === '.js') {
-	        	moduleCache[_path].fn = callback;
-	        }
-	  	},
-	    requirejs: {
-	    	config: function (cfg) {
-	    		requireCfg = cfg;
-	    	}
-	    }
+requireMock.requirejs = {
+	config: function (cfg) {
+		requireCfg = cfg;
 	}
+};
 
 function log() {
 	grunt.log.writeln(_joint(arguments));
@@ -150,15 +139,15 @@ function _checkIngoreList(_path) {
 }
 
 function _resolveSrcRequire(_path) {
-	moduleCache[_path].fn.replace(srcRegExp, function(m, $1, $2, $3, $4) {
-		if (path.extname($3) && (/\.js$/.test($3) || /\.tpl\.html$/.test($3))) {
+	moduleCache[_path].fn.replace(srcRegExp, function(m, $1, $2, $3, $4, $5) {
+		if (path.extname($4) && (/\.js$/.test($4) || /\.tpl\.html$/.test($4))) {
 			return '';
 		}
-		var _depath = _resolveDependency(_path, $3, '.js');
-		if ($1 == 'require') {
-			moduleCache[_path].deps.push({path: _depath, dep: $3, indeep:true});
+		var _depath = _resolveDependency(_path, $4, '.js');
+		if ($2 == 'require') {
+			moduleCache[_path].deps.push({path: _depath, dep: $4, indeep:true});
 		} else {
-			moduleCache[_path].deps.push({path: _depath, dep: $3, indeep:false});
+			moduleCache[_path].deps.push({path: _depath, dep: $4, indeep:false});
 		}
 		return '';
 	})
@@ -166,6 +155,7 @@ function _resolveSrcRequire(_path) {
 
 function _resolveRequire(_path) {
 	var content = '';
+		_path = path.normalize(_path);
 	if (!(path.extname(_path) == '.js'|| path.extname(_path) == '.css' || /\.tpl\.html$/.test(_path) || /\.src\.html$/.test(_path))) {
 		return;
 	}
@@ -183,9 +173,8 @@ function _resolveRequire(_path) {
 		if (!moduleCache[_path]) {
 			moduleCache[_path] = {fn:'function(require){}',deps:[]};
 		}
-		content = praseTpl(content, {filename:_path, compileDebug: false,_with:true, consumeEOL: true, encoding: opts.encoding});
-		moduleCache[_path].fn = 'function(require){return {render: function(locals) {' + content + '}}}';
-		content = _wrapTpl(content);
+		moduleCache[_path].fn  = parseTpl(content, {filename:_path, compileDebug: false, _with:true, encoding: opts.encoding});
+		content = _wrapTpl(moduleCache[_path].fn);
 	} else if (/\.src\.html$/.test(_path)) {
 		if (!moduleCache[_path]) {
 			moduleCache[_path] = {fn: content, deps: []};
@@ -209,14 +198,8 @@ function _compileFile(_path, callback) {
 			callback(err);
 		});
 	} else if (ext === '.less') {
-		/*
-		var paths = [];
-		content.replace(importRegExp, function(m, $1) {
-			paths.push(path.join(path.dirname(_path), $1));
-			return m;
-		});*/
 		Less.render(content, {
-			paths: ['/home/paul/tain335/ace/modMock'],
+			paths: [opts.root],
 			filename: _path
 		}, function(err, css) {
 			if (err) {
@@ -228,24 +211,6 @@ function _compileFile(_path, callback) {
 		});
 	} else {
 		callback();
-	}
-}
-
-function scanFile(path, excutor, tasks) {
-	var stats = fs.statSync(path);
-	if (stats.isDirectory()) {
-		var files = fs.readdirSync(path);
-		for(var i = files.length; i--;) {
-			scanFile(path + '/' + files[i], excutor, tasks);
-		}
-	} else {
-		if (tasks) {
-			tasks.push(function(callback) {
-				excutor(path, callback);
-			});
-		} else {
-			excutor(path);
-		}
 	}
 }
 
@@ -273,23 +238,65 @@ function scanRoot(root, excutor, asynCallback) {
 	} 
 }
 
-function combineJs() {
+
+function scanFile(path, excutor, tasks) {
+	var stats = fs.statSync(path);
+	if (stats.isDirectory()) {
+		var files = fs.readdirSync(path);
+		for(var i = files.length; i--;) {
+			scanFile(path + '/' + files[i], excutor, tasks);
+		}
+	} else {
+		if (tasks) {
+			tasks.push(function(callback) {
+				excutor(path, callback);
+			});
+		} else {
+			excutor(path);
+		}
+	}
+}
+
+function combineMod() {
 	for(var prop in moduleCache) {
 		if (moduleCache.hasOwnProperty(prop)) {	
 			var content = '';
-			_combineJs.trace = {};
-			_combineJs.trace[prop] = true;
-			buildMainWrap.main = prop;
+			_combineMod.trace = {};
+			_combineMod.trace[prop] = true;
 			for(var i = 0 ; i < moduleCache[prop].deps.length; i++) {
 				var mod = moduleCache[prop].deps[i];
 				if (requireCfg.paths && requireCfg.paths[mod.dep]) {
 					continue;
 				}
-				content += _combineJs(mod.path, opts.encoding, !!mod.indeep) + buildMainWrap(mod.path, moduleCache[mod.path].deps, moduleCache[mod.path].fn, mod.dep);
+				content += _combineMod(mod.path, opts.encoding, !!mod.indeep) + buildMainWrap(mod.path, moduleCache[mod.path].deps, moduleCache[mod.path].fn, mod.dep);
 			}
 			moduleCache[prop].buildContent = content;
 		}
 	}
+}
+
+function _combineMod(_path, indeep) {
+	var deps = moduleCache[_path].deps;
+	var content = '';
+	if (!deps) {
+		warn('No This Module:%s', _path);
+		return '';
+	}
+	if (!indeep) {
+		return '';
+	}
+	for(var i = deps.length; i--;) {
+		if (_combineMod.trace[deps[i].path]) {
+			continue;
+		} else {
+			_combineMod.trace[deps[i].path] = true;
+		}
+		if (requireCfg.paths && requireCfg.paths[deps[i].dep]) {
+			continue;
+		}
+		content += _combineMod(deps[i].path, true) + buildDepWrap(deps[i].path, moduleCache[deps[i].path].fn, deps[i].dep);
+	}
+	return content;
 }
 
 function buildDepWrap(depath, fn, name) {
@@ -303,33 +310,9 @@ function buildMainWrap(prop, deps, fn, name) {
 	for(var i = 0; i < deps.length; i++) {
 		_deps.push('\"' + deps[i].dep + '\"');
 	}
-	return beautify.js_beautify(';define(' + (name ? '\"'+ name +'\",' : "") + '[' + (mod.fn.length === 1 ? ['\"require\"'] : ['\"require\"', '\"exports\"', '\"module\"']).concat(_deps) + '],' + fn.toString() + ')', {indent_size: 2}); 
+	return '\n;define(' + (name ? '\"'+ name +'\",' : "") + '[' + (mod.fn.length === 1 ? ['\"require\"'] : ['\"require\"', '\"exports\"', '\"module\"']).concat(_deps) + '],' + fn.toString() + ')'; 
 }
 
-function _combineJs(_path, indeep) {
-	var deps = moduleCache[_path].deps;
-	var content = '';
-	if (!deps) {
-		warn('No This Module:%s', _path);
-		return '';
-	}
-	if (!indeep) {
-		return '';
-	}
-	for(var i = deps.length; i--;) {
-		if (_combineJs.trace[deps[i].path]) {
-			continue;
-		} else {
-			_combineJs.trace[deps[i].path] = true;
-		}
-		if (requireCfg.paths && requireCfg.paths[deps[i].dep]) {
-			continue;
-		}
-		content += _combineJs(deps[i].path, true) + buildDepWrap(deps[i].path, moduleCache[deps[i].path].fn
-				, _isRelativePath(deps[i].dep) ? path.relative(path.dirname(buildMainWrap.main), deps[i].path).split('.js')[0] : deps[i].dep);
-	}
-	return content;
-}
 
 function circleReferenceCheck() {
 	if (!_depsTrace.trace) {
@@ -347,7 +330,7 @@ function _circleReferenCheck(prop) {
 		return;
 	}
 	if (!moduleCache[prop]) {
-		throw new Error('Error! Module Canot Found: ' + prop);
+		throw new Error('Error! Module Cannot Found: ' + prop);
 	}
 	var deps = moduleCache[prop].deps;
 	_depsTrace.trace.unshift(prop);
@@ -366,101 +349,120 @@ function _depsTrace(mod) {
 	_circleReferenCheck(mod);
 }
 
-function praseTpl(str, options) {
-	var options = options || {}
-	, open = options.open || exports.open || '<%'
-	, close = options.close || exports.close || '%>'
-	, filename = options.filename
-	, compileDebug = options.compileDebug !== false
-	, buf = ""
-	, included = !!options.included
-	, consumeEOL = !!options.consumeEOL
-	, encodeHtmlFn = "var $encodeHtml = function(str) { return (str + '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, '&#96;').replace(/\'/g, '&#39;').replace(/\"/g, '&quot;');}";
-  	buf += ';var buf = [];';
-  	if (false !== options._with) buf += 'with (locals || {}) {(function(){';
-  	buf += 'buf.push(\'';
-  	var lineno = 1;
-  	for (var i = 0, len = str.length; i < len; ++i) {
-    	var stri = str[i];
-    	if (str.slice(i, open.length + i) == open) {
-	      	i += open.length
-	      	var prefix, postfix;
-	      	switch (str[i]) {
-	        	case '=':
-	        		if (str[i+1] == '=') {
-	        			prefix = "', $encodeHtml(";
-			        	postfix = "), '";
-			        	i += 2;
-	        		} else {
-	        			prefix = "',";
-			        	postfix = ",'";
-			        	++i;
-	        		}        
-		        	break;
-	        	default:
-	          		prefix = "');";
-	          		postfix = "buf.push('";
-	          		break;
-	      	}
-	      	var end = str.indexOf(close, i)
-	        , js = str.substring(i, end)
-	        , start = i
-	        , include = null
-	        , n = 0;
-	      	if (0 == js.trim().indexOf('include')) {
-	        	var dep = js.trim().slice(7).trim();
-	        	if (!filename) throw new Error('filename option is required for tpl includes');
-	        	//var _path = _resolveRefference(name, '.tpl.html');
-	        	var _path = _resolveDependency(filename, dep, '.tpl.html');
-	        	include = _readFile(_path);
-	        	if (/\.tpl\.html$/.test(_path)) {
-		        	include = arguments.callee(include, {filename: _path, _with: false, open: open, close: close, compileDebug: compileDebug, consumeEOL: consumeEOL, included: true});
-		        	if (!moduleCache[_path]) {
-						moduleCache[_path] = {fn:'function(require){ return { render: function(locals){' + include + '}}',deps:[]};
-						requireMock.path = _path;
-		        		vm.runInNewContext( _wrapTpl(include), requireMock);
-					}
-		        	requireMock.path = filename;
-		        	buf += "' + (function(){" + include  + "})() + '";
-		        } else if (/\.css$/.test(_path)) {
-		        	buf += new CleanCSS().minify(stylewrap[0] + include + stylewrap[1]);
-		        }
-		        js = '';
-	      	}
-	      	while (~(n = js.indexOf("\n", n))) n++, lineno++;
-	      	if (js) {
-	        	buf += prefix;
-	        	buf += js.trim();
-	        	buf += postfix;
-	      	}
-	      	i += end - start + close.length - 1;
-    	} else if (stri == "\\") {
-      		buf += "\\\\";
-    	} else if (stri == "'") {
-      		buf += "\\'";
-    	} else if (stri == "\r") {
-      		// ignore
-      		buf += "\r";
-    	} else if (stri == "\n") {
-      		if (!consumeEOL) {
-        		buf += "\\n";
-        		lineno++;
-      		}
-    	} else if (stri == " ") {
-      		// ignore
-    	} else if (stri == "\t"){
-      		// ignore
-    	} else {
-    		buf += stri;
-    	}
-  	}
-	if (false !== options._with) buf += "');})();}";
-	else buf += "');";
-	if (!included) {
-		buf = encodeHtmlFn + buf;
+function parseTpl(content, options) {
+	var str = EJS.parse(content, options),
+		module = [];
+	module.push('function(require) {');
+	if(~(content.indexOf('<%='))) {
+		module.push("var escape = function(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, '&#96;').replace(/\'/g, '&#39;').replace(/\"/g, '&quot;')};");
 	}
-	return buf += "return buf.join('');"
-};
+	module.push('return {render: function(locals) {');
+	module.push(str);
+	module.push('}}}');
+	return module.join('');
+}
+
+// function praseTpl(str, options) {
+// 	var options = options || {}
+// 	, open = options.open || exports.open || '<%'
+// 	, close = options.close || exports.close || '%>'
+// 	, filename = options.filename
+// 	, compileDebug = options.compileDebug !== false
+// 	, buf = ""
+// 	, included = !!options.included
+// 	, consumeEOL = !!options.consumeEOL
+// 	, encodeHtmlFn = "var $encodeHtml = function(str) { return (str + '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, '&#96;').replace(/\'/g, '&#39;').replace(/\"/g, '&quot;');}";
+//   	buf += ';var buf = [];';
+//   	if (false !== options._with) buf += 'with (locals || {}) {(function(){';
+//   	buf += 'buf.push(\'';
+//   	var lineno = 1;
+//   	for (var i = 0, len = str.length; i < len; ++i) {
+//     	var stri = str[i];
+//     	if (str.slice(i, open.length + i) == open) {
+// 	      	i += open.length
+// 	      	var prefix, postfix;
+// 	      	switch (str[i]) {
+// 	        	case '=':
+// 	        		if (str[i+1] == '=') {
+// 	        			prefix = "', $encodeHtml(";
+// 			        	postfix = "), '";
+// 			        	i += 2;
+// 	        		} else {
+// 	        			prefix = "',";
+// 			        	postfix = ",'";
+// 			        	++i;
+// 	        		}        
+// 		        	break;
+// 	        	default:
+// 	          		prefix = "');";
+// 	          		postfix = "buf.push('";
+// 	          		break;
+// 	      	}
+// 	      	var end = str.indexOf(close, i)
+// 	        , js = str.substring(i, end)
+// 	        , start = i
+// 	        , include = null
+// 	        , n = 0;
+// 	      	if (0 == js.trim().indexOf('include')) {
+// 	        	var dep = js.trim().slice(7).trim();
+// 	        	if (!filename) throw new Error('filename option is required for tpl includes');
+// 	        	//var _path = _resolveRefference(name, '.tpl.html');
+// 	        	var _path = _resolveDependency(filename, dep, '.tpl.html');
+// 	        	include = _readFile(_path);
+// 	        	if (/\.tpl\.html$/.test(_path)) {
+// 		        	include = arguments.callee(include, {filename: _path, _with: false, open: open, close: close, compileDebug: compileDebug, consumeEOL: consumeEOL, included: true});
+// 		        	if (!moduleCache[_path]) {
+// 						moduleCache[_path] = {fn:'function(require){ return { render: function(locals){' + include + '}}',deps:[]};
+// 						requireMock.path = _path;
+// 		        		vm.runInNewContext( _wrapTpl(include), requireMock);
+// 					}
+// 		        	requireMock.path = filename;
+// 		        	buf += "' + (function(){" + include  + "})() + '";
+// 		        } else if (/\.css$/.test(_path)) {
+// 		        	buf += new CleanCSS().minify(stylewrap[0] + include + stylewrap[1]);
+// 		        }
+// 		        js = '';
+// 	      	}
+// 	      	while (~(n = js.indexOf("\n", n))) n++, lineno++;
+// 	      	if (js) {
+// 	        	buf += prefix;
+// 	        	buf += js.trim();
+// 	        	buf += postfix;
+// 	      	}
+// 	      	i += end - start + close.length - 1;
+//     	} else if (stri == "\\") {
+//       		buf += "\\\\";
+//     	} else if (stri == "'") {
+//       		buf += "\\'";
+//     	} else if (stri == "\r") {
+//       		// ignore
+//       		buf += "\r";
+//     	} else if (stri == "\n") {
+//       		if (!consumeEOL) {
+//         		buf += "\\n";
+//         		lineno++;
+//       		}
+//     	} else if (stri == " ") {
+//       		// ignore
+//     	} else if (stri == "\t"){
+//       		// ignore
+//     	} else {
+//     		buf += stri;
+//     	}
+//   	}
+// 	if (false !== options._with) buf += "');})();}";
+// 	else buf += "');";
+// 	if (!included) {
+// 		buf = encodeHtmlFn + buf;
+// 	}
+// 	return buf += "return buf.join('');"
+// };
+
+function _formatLine(offset, content) {
+	return content.split('\n').map(function(str) {
+			return offset + str
+		}).join('\n');
+}
 
 function copyFiles(from, dest, opts) {
 	var prop, _path, _dirname, _content, _insertContent = '', files; 
@@ -488,7 +490,9 @@ function copyFiles(from, dest, opts) {
 					}
 				})
 				//.* 无法匹配换行符 [\s\S]*可以匹配包括换行符内所有字符
+				var offset = '';
 				_content = _content.replace(srcRegExp, function(m, $1, $2, $3, $4) {
+					offset = $1;
 					if (path.extname($3) && !(/\.js$/.test($3) || /\.tpl\.html$/.test($3))) {
 						if ($1 !== 'require') {
 							if(/\.css$/.test($3)) {
@@ -503,7 +507,7 @@ function copyFiles(from, dest, opts) {
 					return '';
 				});
 				_content = _content.replace(/<body[^>]*>([\s\S]*)<\/body>/, function(match, $1) {
-					return match.replace($1, _insertContent + _wrapScript(moduleCache[prop].buildContent) + $1);
+					return match.replace($1, _formatLine(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent)) + $1);
 				});
 				fs.writeFileSync(_path.replace(/\.src\.html$/, '.html'), _content, {encoding: opts.encoding});
 			} else if (/(-main|^main)\.css$/.test(path.basename(prop))) {
@@ -568,7 +572,13 @@ module.exports = function(grunt) {
 		opts = this.options({});
 		if (!opts.root) {
 			throw new Error('Root required!');
-		} else if (!opts.encoding) {
+		}
+		if (!opts.output) {
+			throw new Error('Output Root required!');
+		}
+		opts.root = path.normalize(opts.root);
+		opts.output = path.normalize(opts.output);
+		if (!opts.encoding) {
 			opts.encoding = 'utf-8';
 		}
 		var taskType = this.target.split('-')[0];
@@ -618,7 +628,7 @@ module.exports = function(grunt) {
 	}
 
 	function copyAll() {
-		combineJs();
+		combineMod();
 		copyFiles(opts.root, opts.output, opts);
 	}
 }
