@@ -6,10 +6,10 @@ with (locals || {}) { (function(){
 return buf.join('');})() + '\n'); })();
 } 
 return buf.join('');}}})
-;define("./a",["require"],function (require) {
+;define("./a",["require","exports","module"],function (require) {
 	console.log(1111);
 })
-;define("js\main",["require","./main.tpl.html","./a"],function (require) {
+;define("js\main",["require","exports","module","./main.tpl.html","./a"],function (require) {
     var a, tpl;
     console.log(1111);
     tpl = require('./main.tpl.html');

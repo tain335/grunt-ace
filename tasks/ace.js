@@ -20,11 +20,12 @@ var fs = require('fs'),
 	multiCommentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/g,
 	siglCommentRegExp = /\/\/.*$/mg,
 	srcRegExp = /(.*)<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/g,
+	embedContentRegExp = /(.*)<!--embed-content-->/,
 	//var importRegExp = /^\s*@import\s+["']([^"']+)['"]\s*;$/mg
 	fnwrap = ['(function(define){','})(define)'],
 	tplwrap = ['(function(define){define(', ');})(define)'],
-	scriptwrap = [linefeed + '<script type="text/javascript">' + linefeed, linefeed + '</script>'],
-	stylewrap = [linefeed + '<style type="text/css">' + linefeed, linefeed + '</style>'],
+	scriptwrap = [linefeed + '<script type="text/javascript">' + linefeed, linefeed + '</script>' + linefeed],
+	stylewrap = [linefeed + '<style type="text/css">' + linefeed, linefeed + '</style>' +　linefeed],
 	moduleCache = {},
 	opts = {},
 	requireCfg = {},
@@ -191,8 +192,13 @@ function _resolveRequire(_path) {
 }
 
 function _compileFile(_path, callback) {
-	var ext = path.extname(_path);
-	var content = fs.readFileSync(_path, opts.encoding);
+	var ext, content;
+	if (_checkIngoreList(_path)) {
+		callback();
+		return;
+	}
+	ext = path.extname(_path);
+	content = fs.readFileSync(_path, opts.encoding);
 	if (ext === '.coffee') {
 		fs.writeFile(_path.replace('.coffee', '.js'), CoffeeScript.compile(content), {encoding: opts.encoding}, function(err) {
 			callback(err);
@@ -310,7 +316,7 @@ function buildMainWrap(prop, deps, fn, name) {
 	for(var i = 0; i < deps.length; i++) {
 		_deps.push('\"' + deps[i].dep + '\"');
 	}
-	return '\n;define(' + (name ? '\"'+ name +'\",' : "") + '[' + (mod.fn.length === 1 ? ['\"require\"'] : ['\"require\"', '\"exports\"', '\"module\"']).concat(_deps) + '],' + fn.toString() + ')'; 
+	return '\n;define(' + (name ? '\"'+ name +'\",' : "") + '[' +  ['\"require\"', '\"exports\"', '\"module\"'].concat(_deps) + '],' + fn.toString() + ')'; 
 }
 
 
@@ -491,14 +497,14 @@ function copyFiles(from, dest, opts) {
 				})
 				//.* 无法匹配换行符 [\s\S]*可以匹配包括换行符内所有字符
 				var offset = '';
-				_content = _content.replace(srcRegExp, function(m, $1, $2, $3, $4) {
+				_content = _content.replace(srcRegExp, function(m, $1, $2, $3, $4, $5) {
 					offset = $1;
-					if (path.extname($3) && !(/\.js$/.test($3) || /\.tpl\.html$/.test($3))) {
-						if ($1 !== 'require') {
-							if(/\.css$/.test($3)) {
-								return _wrapStyle(_readFile(_resolveDependency(prop, $3, '.css')));
+					if (path.extname($4) && !(/\.js$/.test($4) || /\.tpl\.html$/.test($3))) {
+						if ($2 !== 'require') {
+							if(/\.css$/.test($4)) {
+								return _wrapStyle(_readFile(_resolveDependency(prop, $4, '.css')));
 							} else {
-								return _readFile(_resolveDependency(prop, $3, '.css'));
+								return _readFile(_resolveDependency(prop, $4, '.css'));
 							}
 						} else {
 							throw new Error('Only js or template file can be required! please check: ' + m);
@@ -506,8 +512,11 @@ function copyFiles(from, dest, opts) {
 					}
 					return '';
 				});
-				_content = _content.replace(/<body[^>]*>([\s\S]*)<\/body>/, function(match, $1) {
-					return match.replace($1, _formatLine(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent)) + $1);
+				//_content = _content.replace(/<body[^>]*>([\s\S]*)<\/body>/, function(match, $1) {
+				// 	return match.replace($1, $1 + _formatLine(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent)));
+				// });
+				_content = _content.replace(embedContentRegExp, function(match, $1) {
+					return _formatLine(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent));
 				});
 				fs.writeFileSync(_path.replace(/\.src\.html$/, '.html'), _content, {encoding: opts.encoding});
 			} else if (/(-main|^main)\.css$/.test(path.basename(prop))) {

@@ -3,10 +3,23 @@
 	<head>
 		
 	</head>
-	<body>		
+	<body>
+		<header id="header" class="">
+			
+		</header>
+		<nav>
+			<ul>
+				<li><a href="" title=""></a></li>
+			</ul>
+		</nav>
+		<footer>
+			
+		</footer>
+
+		
 		<script type="text/javascript">
 		
-		;define("./a",["require"],function (require) {
+		;define("./a",["require","exports","module"],function (require) {
 			console.log(1111);
 		})
 		;define("./main.tpl.html",["require","exports","module"],function(require) {var escape = function(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, '&#96;').replace(/'/g, '&#39;').replace(/"/g, '&quot;')};return {render: function(locals) {var buf = [];
@@ -16,13 +29,13 @@
 		return buf.join('');})() + '\n'); })();
 		} 
 		return buf.join('');}}})
-		;define("../js/main",["require","./main.tpl.html","./a"],function (require) {
+		;define("../js/main",["require","exports","module","./main.tpl.html","./a"],function (require) {
 		    var a, tpl;
 		    console.log(1111);
 		    tpl = require('./main.tpl.html');
 		    return a = require('./a');
 		  })
 		</script>
-
+		
 	</body>
 </html>
