@@ -131,6 +131,7 @@ function _readFile(_path) {
 function _checkIngoreList(_path) {
 	if (opts.ignores) {
 		for (var i = opts.ignores.length; i--;) {
+			//console.log(_path, path.join(opts.root, opts.ignores[i]), 1234, minimatch(_path, path.join(opts.root, opts.ignores[i]), {dot: true}));
 			if (minimatch(_path, path.join(opts.root, opts.ignores[i]), {dot: true})) {
 				return true;
 			}
@@ -141,7 +142,7 @@ function _checkIngoreList(_path) {
 
 function _resolveSrcRequire(_path) {
 	moduleCache[_path].fn.replace(srcRegExp, function(m, $1, $2, $3, $4, $5) {
-		if (path.extname($4) && (/\.js$/.test($4) || /\.tpl\.html$/.test($4))) {
+		if (path.extname($4) && (/\.js$/.test($4) || /\.tpl\.html$/.test($4) || /\.src\.html$/.test($4))) {
 			return '';
 		}
 		var _depath = _resolveDependency(_path, $4, '.js');
@@ -206,7 +207,8 @@ function _compileFile(_path, callback) {
 	} else if (ext === '.less') {
 		Less.render(content, {
 			paths: [opts.root],
-			filename: _path
+			filename: _path,
+			relativeUrls: true
 		}, function(err, css) {
 			if (err) {
 				callback(err);
@@ -464,7 +466,7 @@ function parseTpl(content, options) {
 // 	return buf += "return buf.join('');"
 // };
 
-function _formatLine(offset, content) {
+function _offsetContent(offset, content) {
 	return content.split('\n').map(function(str) {
 			return offset + str
 		}).join('\n');
@@ -502,9 +504,9 @@ function copyFiles(from, dest, opts) {
 					if (path.extname($4) && !(/\.js$/.test($4) || /\.tpl\.html$/.test($3))) {
 						if ($2 !== 'require') {
 							if(/\.css$/.test($4)) {
-								return _wrapStyle(_readFile(_resolveDependency(prop, $4, '.css')));
+								return _offsetContent(offset, _wrapStyle(_readFile(_resolveDependency(prop, $4, '.css'))));
 							} else {
-								return _readFile(_resolveDependency(prop, $4, '.css'));
+								return _offsetContent(offset, _readFile(_resolveDependency(prop, $4, '.css')));
 							}
 						} else {
 							throw new Error('Only js or template file can be required! please check: ' + m);
@@ -513,10 +515,10 @@ function copyFiles(from, dest, opts) {
 					return '';
 				});
 				//_content = _content.replace(/<body[^>]*>([\s\S]*)<\/body>/, function(match, $1) {
-				// 	return match.replace($1, $1 + _formatLine(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent)));
+				// 	return match.replace($1, $1 + _offsetContent(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent)));
 				// });
 				_content = _content.replace(embedContentRegExp, function(match, $1) {
-					return _formatLine(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent));
+					return _offsetContent(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent));
 				});
 				fs.writeFileSync(_path.replace(/\.src\.html$/, '.html'), _content, {encoding: opts.encoding});
 			} else if (/(-main|^main)\.css$/.test(path.basename(prop))) {
@@ -531,7 +533,7 @@ function copyFiles(from, dest, opts) {
 			files = glob.sync(path.join(opts.root, opts.reserves[i]));
 			for (var j = files.length; j--;) {
 				if (fs.statSync(files[j]).isFile()) {
-					_path = files[j].replace(from, dest);
+					_path = path.normalize(files[j]).replace(from, dest);
 					_dirname = path.dirname(_path);
 					_content = fs.readFileSync(files[j], opts.encoding);
 					if (!fs.existsSync(_dirname)) {
