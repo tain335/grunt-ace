@@ -20,7 +20,6 @@ var fs = require('fs'),
 	multiCommentRegExp = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/g,
 	siglCommentRegExp = /\/\/.*$/mg,
 	srcRegExp = /(.*)<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/g,
-	embedContentRegExp = /(.*)<!--embed-content-->/,
 	//var importRegExp = /^\s*@import\s+["']([^"']+)['"]\s*;$/mg
 	fnwrap = ['(function(define){','})(define)'],
 	tplwrap = ['(function(define){define(', ');})(define)'],
@@ -152,7 +151,7 @@ function _resolveSrcRequire(_path) {
 			moduleCache[_path].deps.push({path: _depath, dep: $4, indeep:false});
 		}
 		return '';
-	})
+	});
 }
 
 function _resolveRequire(_path) {
@@ -207,8 +206,8 @@ function _compileFile(_path, callback) {
 	} else if (ext === '.less') {
 		Less.render(content, {
 			paths: [opts.root],
-			filename: _path,
-			relativeUrls: true
+			filename: _path
+			//relativeUrls: true
 		}, function(err, css) {
 			if (err) {
 				callback(err);
@@ -247,20 +246,20 @@ function scanRoot(root, excutor, asynCallback) {
 }
 
 
-function scanFile(path, excutor, tasks) {
-	var stats = fs.statSync(path);
+function scanFile(_path, excutor, tasks) {
+	var stats = fs.statSync(_path);
 	if (stats.isDirectory()) {
-		var files = fs.readdirSync(path);
+		var files = fs.readdirSync(_path);
 		for(var i = files.length; i--;) {
-			scanFile(path + '/' + files[i], excutor, tasks);
+			scanFile(_path + path.sep + files[i], excutor, tasks);
 		}
 	} else {
 		if (tasks) {
 			tasks.push(function(callback) {
-				excutor(path, callback);
+				excutor(_path, callback);
 			});
 		} else {
-			excutor(path);
+			excutor(_path);
 		}
 	}
 }
@@ -512,14 +511,15 @@ function copyFiles(from, dest, opts) {
 							throw new Error('Only js or template file can be required! please check: ' + m);
 						}
 					}
-					return '';
+					return m;
 				});
 				//_content = _content.replace(/<body[^>]*>([\s\S]*)<\/body>/, function(match, $1) {
 				// 	return match.replace($1, $1 + _offsetContent(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent)));
 				// });
-				_content = _content.replace(embedContentRegExp, function(match, $1) {
+				_content = _content.replace(/(.*)<!--\s*(require|include)\s+(['"])([^'"]+)(['"])\s*-->/, function(match, $1) {
 					return _offsetContent(offset, _insertContent + _wrapScript(moduleCache[prop].buildContent));
 				});
+				_content = _content.replace(srcRegExp, function() {return ''});
 				fs.writeFileSync(_path.replace(/\.src\.html$/, '.html'), _content, {encoding: opts.encoding});
 			} else if (/(-main|^main)\.css$/.test(path.basename(prop))) {
 				fs.writeFileSync(_path, fs.readFileSync(prop, opts.encoding), {encoding: opts.encoding});
