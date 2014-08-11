@@ -1,0 +1,123 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'D:\\nodejs\\\\node.exe',
+1 verbose cli   'D:\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'publish' ]
+2 info using npm@1.4.21
+3 info using node@v0.10.30
+4 verbose node symlink D:\nodejs\\node.exe
+5 verbose publish [ '.' ]
+6 verbose cache add [ '.', null ]
+7 verbose cache add name=undefined spec="." args=[".",null]
+8 verbose parsed url { protocol: null,
+8 verbose parsed url   slashes: null,
+8 verbose parsed url   auth: null,
+8 verbose parsed url   host: null,
+8 verbose parsed url   port: null,
+8 verbose parsed url   hostname: null,
+8 verbose parsed url   hash: null,
+8 verbose parsed url   search: null,
+8 verbose parsed url   query: null,
+8 verbose parsed url   pathname: '.',
+8 verbose parsed url   path: '.',
+8 verbose parsed url   href: '.' }
+9 silly lockFile 3a52ce78- .
+10 verbose lock . C:\Users\mixmedia\AppData\Roaming\npm-cache\3a52ce78-.lock
+11 verbose tar pack [ 'C:\\Users\\mixmedia\\AppData\\Roaming\\npm-cache\\grunt-ace\\0.1.4\\package.tgz',
+11 verbose tar pack   '.' ]
+12 verbose tarball C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package.tgz
+13 verbose folder .
+14 info prepublish grunt-ace@0.1.4
+15 silly lockFile 1f1177db-tar tar://.
+16 verbose lock tar://. C:\Users\mixmedia\AppData\Roaming\npm-cache\1f1177db-tar.lock
+17 silly lockFile 523b5ebb-ache-grunt-ace-0-1-4-package-tgz tar://C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package.tgz
+18 verbose lock tar://C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package.tgz C:\Users\mixmedia\AppData\Roaming\npm-cache\523b5ebb-ache-grunt-ace-0-1-4-package-tgz.lock
+19 silly lockFile 1f1177db-tar tar://.
+20 silly lockFile 1f1177db-tar tar://.
+21 silly lockFile 523b5ebb-ache-grunt-ace-0-1-4-package-tgz tar://C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package.tgz
+22 silly lockFile 523b5ebb-ache-grunt-ace-0-1-4-package-tgz tar://C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package.tgz
+23 silly lockFile 6ebcc641-pm-cache-grunt-ace-0-1-4-package C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package
+24 verbose lock C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package C:\Users\mixmedia\AppData\Roaming\npm-cache\6ebcc641-pm-cache-grunt-ace-0-1-4-package.lock
+25 silly lockFile 6ebcc641-pm-cache-grunt-ace-0-1-4-package C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package
+26 silly lockFile 6ebcc641-pm-cache-grunt-ace-0-1-4-package C:\Users\mixmedia\AppData\Roaming\npm-cache\grunt-ace\0.1.4\package
+27 silly lockFile 3a52ce78- .
+28 silly lockFile 3a52ce78- .
+29 silly publish { name: 'grunt-ace',
+29 silly publish   description: 'packaging tool',
+29 silly publish   version: '0.1.4',
+29 silly publish   homepage: 'https://github.com/tain335/tain335',
+29 silly publish   author: { name: 'tain335', email: '649397393@qq.com' },
+29 silly publish   repository: { type: 'git', url: 'https://github.com/tain335/tain335' },
+29 silly publish   bugs: { url: 'https://github.com/tain335/tain335/issues' },
+29 silly publish   licenses:
+29 silly publish    [ { type: 'MIT',
+29 silly publish        url: 'https://github.com/tain335/tain335/blob/master/LICENSE-MIT' } ],
+29 silly publish   engines: { node: '>= 0.8.0' },
+29 silly publish   scripts: { test: 'grunt test' },
+29 silly publish   dependencies:
+29 silly publish    { grunt: '~0.4.2',
+29 silly publish      'grunt-contrib-jshint': '~0.6.0',
+29 silly publish      'grunt-contrib-clean': '~0.4.0',
+29 silly publish      'grunt-contrib-nodeunit': '~0.2.0',
+29 silly publish      'grunt-jsbeautifier': '~0.2.7',
+29 silly publish      'js-beautify': '~1.5.1',
+29 silly publish      'clean-css': '~2.2.3',
+29 silly publish      async: '~0.9.0',
+29 silly publish      less: '~1.7.3',
+29 silly publish      mkdirp: '~0.3.5',
+29 silly publish      glob: '~4.0.2',
+29 silly publish      minimatch: '~0.3.0',
+29 silly publish      'coffee-script': '*' },
+29 silly publish   peerDependencies: { grunt: '~0.4.2' },
+29 silly publish   keywords: [ 'gruntplugin' ],
+29 silly publish   readme: '# grunt-ace\r\n\r\n> ACE for package.\r\n\r\n## Getting Started\r\nThis plugin requires Grunt `~0.4.2`\r\n\r\nIf you haven\'t used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you\'re familiar with that process, you may install this plugin with this command:\r\n\r\n```shell\r\nnpm install grunt-ace --save-dev\r\n```\r\n\r\nOnce the plugin has been installed, it may be enabled inside your Gruntfile with this line of JavaScript:\r\n\r\n```js\r\ngrunt.loadNpmTasks(\'grunt-ace\');\r\n```\r\n\r\n## Contributing\r\nIn lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).\r\n\r\n## Release History\r\n_(Nothing yet)_\r\n',
+29 silly publish   readmeFilename: 'README.md',
+29 silly publish   gitHead: '14895c9ac32aa533829d4deef9bc9534a59f5893',
+29 silly publish   _id: 'grunt-ace@0.1.4',
+29 silly publish   _shasum: '04e8fa89c8a7fa7c3c698dbbc5d894c42c15cbf5',
+29 silly publish   _from: '.' }
+30 verbose request where is /grunt-ace
+31 verbose request registry https://registry.npmjs.org/
+32 verbose request id 20ad9ad52e15c7a4
+33 verbose url raw /grunt-ace
+34 verbose url resolving [ 'https://registry.npmjs.org/', './grunt-ace' ]
+35 verbose url resolved https://registry.npmjs.org/grunt-ace
+36 verbose request where is https://registry.npmjs.org/grunt-ace
+37 info trying registry request attempt 1 at 14:24:52
+38 http PUT https://registry.npmjs.org/grunt-ace
+39 http 403 https://registry.npmjs.org/grunt-ace
+40 verbose headers { date: 'Fri, 08 Aug 2014 06:24:53 GMT',
+40 verbose headers   server: 'CouchDB/1.5.0 (Erlang OTP/R14B04)',
+40 verbose headers   'content-type': 'application/json',
+40 verbose headers   'cache-control': 'max-age=60',
+40 verbose headers   'content-length': '4122',
+40 verbose headers   'accept-ranges': 'bytes',
+40 verbose headers   via: '1.1 varnish',
+40 verbose headers   'x-served-by': 'cache-ty68-TYO',
+40 verbose headers   'x-cache': 'MISS',
+40 verbose headers   'x-cache-hits': '0',
+40 verbose headers   'x-timer': 'S1407479092.906256,VS0,VE452',
+40 verbose headers   'keep-alive': 'timeout=10, max=50',
+40 verbose headers   connection: 'Keep-Alive' }
+41 error publish Failed PUT 403
+42 error Error: forbidden cannot modify pre-existing version: 0.1.4
+42 error old={"name":"grunt-ace","description":"packaging tool","version":"0.1.4","homepage":"https://github.com/tain335/tain335","author":{"name":"tain335","email":"649397393@qq.com"},"repository":{"type":"git","url":"https://github.com/tain335/tain335"},"bugs":{"url":"https://github.com/tain335/tain335/issues"},"licenses":[{"type":"MIT","url":"https://github.com/tain335/tain335/blob/master/LICENSE-MIT"}],"engines":{"node":">= 0.8.0"},"scripts":{"test":"grunt test"},"dependencies":{"grunt":"~0.4.2","grunt-contrib-jshint":"~0.6.0","grunt-contrib-clean":"~0.4.0","grunt-contrib-nodeunit":"~0.2.0","grunt-jsbeautifier":"~0.2.7","js-beautify":"~1.5.1","clean-css":"~2.2.3","async":"~0.9.0","less":"~1.7.3","mkdirp":"~0.3.5","glob":"~4.0.2","minimatch":"~0.3.0"},"peerDependencies":{"grunt":"~0.4.2"},"keywords":["gruntplugin"],"_id":"grunt-ace@0.1.4","_shasum":"8a49fb869d0bfd5a41a17eabaea7e02fd8a8306b","_from":"grunt-ace/","_npmVersion":"1.4.14","_npmUser":{"name":"tain335","email":"649397393@qq.com"},"maintainers":[{"name":"tain335","email":"649397393@qq.com"}],"dist":{"shasum":"8a49fb869d0bfd5a41a17eabaea7e02fd8a8306b","tarball":"http://registry.npmjs.org/grunt-ace/-/grunt-ace-0.1.4.tgz"}}
+42 error new={"name":"grunt-ace","description":"packaging tool","version":"0.1.4","homepage":"https://github.com/tain335/tain335","author":{"name":"tain335","email":"649397393@qq.com"},"repository":{"type":"git","url":"https://github.com/tain335/tain335"},"bugs":{"url":"https://github.com/tain335/tain335/issues"},"licenses":[{"type":"MIT","url":"https://github.com/tain335/tain335/blob/master/LICENSE-MIT"}],"engines":{"node":">= 0.8.0"},"scripts":{"test":"grunt test"},"dependencies":{"grunt":"~0.4.2","grunt-contrib-jshint":"~0.6.0","grunt-contrib-clean":"~0.4.0","grunt-contrib-nodeunit":"~0.2.0","grunt-jsbeautifier":"~0.2.7","js-beautify":"~1.5.1","clean-css":"~2.2.3","async":"~0.9.0","less":"~1.7.3","mkdirp":"~0.3.5","glob":"~4.0.2","minimatch":"~0.3.0","coffee-script":"*"},"peerDependencies":{"grunt":"~0.4.2"},"keywords":["gruntplugin"],"readme":"# grunt-ace\u000d\u000a\u000d\u000a> ACE for package.\u000d\u000a\u000d\u000a## Getting Started\u000d\u000aThis plugin requires Grunt `~0.4.2`\u000d\u000a\u000d\u000aIf you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you're familiar with that process, you may install this plugin with this command:\u000d\u000a\u000d\u000a```shell\u000d\u000anpm install grunt-ace --save-dev\u000d\u000a```\u000d\u000a\u000d\u000aOnce the plugin has been installed, it may be enabled inside your Gruntfile with this line of JavaScript:\u000d\u000a\u000d\u000a```js\u000d\u000agrunt.loadNpmTasks('grunt-ace');\u000d\u000a```\u000d\u000a\u000d\u000a## Contributing\u000d\u000aIn lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).\u000d\u000a\u000d\u000a## Release History\u000d\u000a_(Nothing yet)_\u000d\u000a","readmeFilename":"README.md","gitHead":"14895c9ac32aa533829d4deef9bc9534a59f5893","_id":"grunt-ace@0.1.4","_shasum":"04e8fa89c8a7fa7c3c698dbbc5d894c42c15cbf5","_from":".","_npmVersion":"1.4.21","_npmUser":{"name":"tain335","email":"649397393@qq.com"},"maintainers":[{"name":"tain335","email":"649397393@qq.com"}],"dist":{"shasum":"04e8fa89c8a7fa7c3c698dbbc5d894c42c15cbf5","tarball":"http://registry.npmjs.org/grunt-ace/-/grunt-ace-0.1.4.tgz"}}: grunt-ace
+42 error     at RegClient.<anonymous> (D:\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:300:14)
+42 error     at Request._callback (D:\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:238:65)
+42 error     at Request.self.callback (D:\nodejs\node_modules\npm\node_modules\request\request.js:123:22)
+42 error     at Request.emit (events.js:98:17)
+42 error     at Request.<anonymous> (D:\nodejs\node_modules\npm\node_modules\request\request.js:893:14)
+42 error     at Request.emit (events.js:117:20)
+42 error     at IncomingMessage.<anonymous> (D:\nodejs\node_modules\npm\node_modules\request\request.js:844:12)
+42 error     at IncomingMessage.emit (events.js:117:20)
+42 error     at _stream_readable.js:938:16
+42 error     at process._tickCallback (node.js:419:13)
+43 error If you need help, you may report this *entire* log,
+43 error including the npm and node versions, at:
+43 error     <http://github.com/npm/npm/issues>
+44 error System Windows_NT 6.1.7601
+45 error command "D:\\nodejs\\\\node.exe" "D:\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "publish"
+46 error cwd E:\git\grunt-ace
+47 error node -v v0.10.30
+48 error npm -v 1.4.21
+49 verbose exit [ 1, true ]
