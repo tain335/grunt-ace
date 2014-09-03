@@ -28,11 +28,12 @@ var fs = require('fs'),
 	moduleCache = {},
 	opts = {},
 	requireCfg = {},
-	requireMock = Window;
+	browserMock = Window;
 
-requireMock.define = function (name, deps, callback) {
-	var _path = path.normalize(requireMock.path);
+browserMock.define = function (name, deps, callback) {
+	var _path = browserMock.path;
 	var require = function(deps, callback, errback) {
+		//only one module
   		if(typeof deps === 'string' && !callback) {
   			var _depath = _resolveDependency(_path, deps, '.js');
         	moduleCache[_path].deps.push({path: _depath, dep: deps});
@@ -53,7 +54,7 @@ requireMock.define = function (name, deps, callback) {
     }
 };
 
-requireMock.requirejs = {
+browserMock.requirejs = {
 	config: function (cfg) {
 		requireCfg = cfg;
 	}
@@ -130,7 +131,6 @@ function _readFile(_path) {
 function _checkIngoreList(_path) {
 	if (opts.ignores) {
 		for (var i = opts.ignores.length; i--;) {
-			//console.log(_path, path.join(opts.root, opts.ignores[i]), 1234, minimatch(_path, path.join(opts.root, opts.ignores[i]), {dot: true}));
 			if (minimatch(_path, path.join(opts.root, opts.ignores[i]), {dot: true})) {
 				return true;
 			}
@@ -164,7 +164,7 @@ function _resolveRequire(_path) {
 		return;
 	}
 	content = _readFile(_path);
-	requireMock.path = _path;
+	browserMock.path = _path;
 	if (path.extname(_path) == '.js') {
 		if (!moduleCache[_path]) {
 			moduleCache[_path] = {fn:function(){}, deps:[]};
@@ -188,7 +188,7 @@ function _resolveRequire(_path) {
 		}
 		return;
 	}
-	vm.runInNewContext(content, requireMock);
+	vm.runInNewContext(content, browserMock);
 }
 
 function _compileFile(_path, callback) {
@@ -268,23 +268,24 @@ function combineMod() {
 	for(var prop in moduleCache) {
 		if (moduleCache.hasOwnProperty(prop)) {	
 			var content = '';
-			_combineMod.trace = {};
-			_combineMod.trace[prop] = true;
+			_combineChildMod.trace = {};
+			_combineChildMod.trace[prop] = true;
 			for(var i = 0 ; i < moduleCache[prop].deps.length; i++) {
 				var mod = moduleCache[prop].deps[i];
 				if (requireCfg.paths && requireCfg.paths[mod.dep]) {
 					continue;
 				}
-				content += _combineMod(mod.path, opts.encoding, !!mod.indeep) + buildMainWrap(mod.path, moduleCache[mod.path].deps, moduleCache[mod.path].fn, mod.dep);
+				content += _combineChildMod(mod.path, !!mod.indeep, mod.dep) + buildMainWrap(mod.path, moduleCache[mod.path].deps, moduleCache[mod.path].fn, mod.dep);
 			}
 			moduleCache[prop].buildContent = content;
 		}
 	}
 }
 
-function _combineMod(_path, indeep) {
-	var deps = moduleCache[_path].deps;
-	var content = '';
+function _combineChildMod(_path, indeep, parentMod) {
+	var deps = moduleCache[_path].deps,
+		parentMod = parentMod || '',
+		content = '';
 	if (!deps) {
 		warn('No This Module:%s', _path);
 		return '';
@@ -293,15 +294,15 @@ function _combineMod(_path, indeep) {
 		return '';
 	}
 	for(var i = deps.length; i--;) {
-		if (_combineMod.trace[deps[i].path]) {
+		if (_combineChildMod.trace[deps[i].path]) {
 			continue;
 		} else {
-			_combineMod.trace[deps[i].path] = true;
+			_combineChildMod.trace[deps[i].path] = true;
 		}
 		if (requireCfg.paths && requireCfg.paths[deps[i].dep]) {
 			continue;
 		}
-		content += _combineMod(deps[i].path, true) + buildDepWrap(deps[i].path, moduleCache[deps[i].path].fn, deps[i].dep);
+		content += _combineChildMod(deps[i].path, true, deps[i].dep) + buildDepWrap(deps[i].path, moduleCache[deps[i].path].fn, path.join(path.dirname(parentMod) , deps[i].dep).replace(/\\/g, '/'));
 	}
 	return content;
 }
@@ -420,10 +421,10 @@ function parseTpl(content, options) {
 // 		        	include = arguments.callee(include, {filename: _path, _with: false, open: open, close: close, compileDebug: compileDebug, consumeEOL: consumeEOL, included: true});
 // 		        	if (!moduleCache[_path]) {
 // 						moduleCache[_path] = {fn:'function(require){ return { render: function(locals){' + include + '}}',deps:[]};
-// 						requireMock.path = _path;
-// 		        		vm.runInNewContext( _wrapTpl(include), requireMock);
+// 						browserMock.path = _path;
+// 		        		vm.runInNewContext( _wrapTpl(include), browserMock);
 // 					}
-// 		        	requireMock.path = filename;
+// 		        	browserMock.path = filename;
 // 		        	buf += "' + (function(){" + include  + "})() + '";
 // 		        } else if (/\.css$/.test(_path)) {
 // 		        	buf += new CleanCSS().minify(stylewrap[0] + include + stylewrap[1]);
@@ -524,7 +525,8 @@ function copyFiles(from, dest, opts) {
 			} else if (/(-main|^main)\.css$/.test(path.basename(prop))) {
 				fs.writeFileSync(_path, fs.readFileSync(prop, opts.encoding), {encoding: opts.encoding});
 			} else if (/(-main|^main)\.js$/.test(path.basename(prop))) {
-				fs.writeFileSync(_path, moduleCache[prop].buildContent + buildMainWrap(prop, moduleCache[prop].deps, moduleCache[prop].fn.toString(), path.relative(opts.root, prop).split('.js')[0]));
+				var modname = path.relative(opts.root, prop).split('.js')[0].replace(/\\/g, '/');
+				fs.writeFileSync(_path, _combineChildMod(prop, true, modname) + buildMainWrap(prop, moduleCache[prop].deps, moduleCache[prop].fn.toString(), modname));
 			}
 		}
 	}
@@ -535,11 +537,11 @@ function copyFiles(from, dest, opts) {
 				if (fs.statSync(files[j]).isFile()) {
 					_path = path.normalize(files[j]).replace(from, dest);
 					_dirname = path.dirname(_path);
-					_content = fs.readFileSync(files[j], opts.encoding);
 					if (!fs.existsSync(_dirname)) {
 						mkdirp.sync(_dirname);
 					}
-					fs.writeFileSync(_path, _content, opts.encoding);
+					_content = fs.readFileSync(files[j]);
+					fs.writeFileSync(_path, _content);
 				}
 			}
 		}
@@ -563,7 +565,7 @@ function loadRequireCfg() {
 	if (opts.requireCfg) {
 		opts.requireCfg += !path.extname(opts.requireCfg) ? '.js' : '';
 		content = fs.readFileSync(path.join(opts.root, opts.requireCfg), opts.encoding);
-		vm.runInNewContext(content, requireMock);
+		vm.runInNewContext(content, browserMock);
 	}
 }
 
