@@ -270,12 +270,17 @@ function combineMod() {
 			var content = '';
 			_combineChildMod.trace = {};
 			_combineChildMod.trace[prop] = true;
-			for(var i = 0 ; i < moduleCache[prop].deps.length; i++) {
-				var mod = moduleCache[prop].deps[i];
-				if (requireCfg.paths && requireCfg.paths[mod.dep]) {
-					continue;
+			if(/\.src.html$/.test(prop)) {
+				for(var i = 0 ; i < moduleCache[prop].deps.length; i++) {
+					var mod = moduleCache[prop].deps[i];
+					if (requireCfg.paths && requireCfg.paths[mod.dep]) {
+						continue;
+					}
+					content += _combineChildMod(mod.path, !!mod.indeep, mod.dep) + buildMainWrap(mod.path, moduleCache[mod.path].deps, moduleCache[mod.path].fn, mod.dep);
 				}
-				content += _combineChildMod(mod.path, !!mod.indeep, mod.dep) + buildMainWrap(mod.path, moduleCache[mod.path].deps, moduleCache[mod.path].fn, mod.dep);
+			} else if(/\.js$/.test(prop)) {
+				var modname = path.relative(opts.root, prop).split('.js')[0].replace(/\\/g, '/');
+				content = _combineChildMod(prop, true, modname) + buildMainWrap(prop, moduleCache[prop].deps, moduleCache[prop].fn.toString(), modname);
 			}
 			moduleCache[prop].buildContent = content;
 		}
@@ -525,8 +530,9 @@ function copyFiles(from, dest, opts) {
 			} else if (/(-main|^main)\.css$/.test(path.basename(prop))) {
 				fs.writeFileSync(_path, fs.readFileSync(prop, opts.encoding), {encoding: opts.encoding});
 			} else if (/(-main|^main)\.js$/.test(path.basename(prop))) {
-				var modname = path.relative(opts.root, prop).split('.js')[0].replace(/\\/g, '/');
-				fs.writeFileSync(_path, _combineChildMod(prop, true, modname) + buildMainWrap(prop, moduleCache[prop].deps, moduleCache[prop].fn.toString(), modname));
+				//var modname = path.relative(opts.root, prop).split('.js')[0].replace(/\\/g, '/');
+				//fs.writeFileSync(_path, _combineChildMod(prop, true, modname) + buildMainWrap(prop, moduleCache[prop].deps, moduleCache[prop].fn.toString(), modname));
+				fs.writeFileSync(_path, moduleCache[prop].buildContent, {encoding: opts.encoding});
 			}
 		}
 	}
